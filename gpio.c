@@ -5,7 +5,8 @@
 #include <fcntl.h>
 #include <memory.h>
 
-#define GPIO 0x48002000
+#define GPIO_BASE 0x48002000
+#define GPIO_OFFSET 0x110	//GPIO_97 register address, the resigter is 32-bit and the higher 16 bit belong to GPIO_97
 #define INT *(volatile unsigned int*)
 
 void *map_base;
@@ -20,14 +21,14 @@ int main(int argc,char *argv[])
 
 printf("fd=%d\n",fd);   
  
-map_base = mmap(0,0x600,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO);
+map_base = mmap(0,0x600,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
 printf("map_base=%p\n",map_base);
     while(1){
-	INT(map_base+0x110) = 0xffff0000; //set it high
+	INT(map_base+GPIO_OFFSET) = 0xffff0000; //set it high
 	usleep(10);
-	INT(map_base+0x110) = 0; //set it low
+	INT(map_base+GPIO_OFFSET) = 0; //set it low
         usleep(20);
-	INT(map_base+0x110) = 0; //set it low
+	INT(map_base+GPIO_OFFSET) = 0; //set it low
         usleep(20);
     }
 
