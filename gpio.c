@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <memory.h>
 
-#define GPIO 0x48002110
+#define GPIO 0x48002000
 #define INT *(volatile unsigned int*)
 
 void *map_base;
@@ -18,12 +18,17 @@ int main(int argc,char *argv[])
     return(-1);
     }
 
-    map_base = mmap(0,0xff,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO);
+printf("fd=%d\n",fd);   
+ 
+map_base = mmap(0,0x600,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO);
+printf("map_base=%p\n",map_base);
     while(1){
-	INT(map_base) = 1; //set it high
-	sleep(1000);
-	INT(map_base) = 0; //set it low
-        sleep(1000);
+	INT(map_base+0x110) = 0xffff0000; //set it high
+	usleep(10);
+	INT(map_base+0x110) = 0; //set it low
+        usleep(20);
+	INT(map_base+0x110) = 0; //set it low
+        usleep(20);
     }
 
     close(fd);   
