@@ -6,7 +6,9 @@
 #include <memory.h>
 
 #define GPIO_BASE 0x48002000
-#define GPIO_OFFSET 0x110	//GPIO_97 register address, the resigter is 32-bit and the higher 16 bit belong to GPIO_97
+//GPIO_97 register address, the resigter is 32-bit and the higher 16 bit belong to GPIO_97
+#define GPIO_OFFSET 0x110	
+
 #define INT *(volatile unsigned int*)
 
 void *map_base;
