@@ -12,7 +12,7 @@
 #define INT *(volatile unsigned int*)
 
 void *map_base;
-int n,fd;
+int n,fd,ret;
 
 int main(int argc,char *argv[])
 {
@@ -23,16 +23,11 @@ int main(int argc,char *argv[])
 
 printf("fd=%d\n",fd);   
  
-map_base = mmap(0,0x200,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
+map_base = mmap(0,0x600,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
 printf("map_base=%p\n",map_base);
-    while(1){
-	INT(map_base+GPIO_OFFSET) = 0x1c0000; //set it high
-	usleep(10);
-	INT(map_base+GPIO_OFFSET) = 0; //set it low
-        usleep(20);
-	INT(map_base+GPIO_OFFSET) = 0; //set it low
-        usleep(20);
-    }
+ret=INT(map_base+GPIO_OFFSET);
+printf("GPIO register value: %x\n",ret);
+INT(map_base+GPIO_OFFSET) = 0x40000; //set it with original setting
 
     close(fd);   
 
