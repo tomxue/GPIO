@@ -32,12 +32,12 @@ int main(int argc,char *argv[])
 	if(strcmp(argv[1], "low") == 0)
        		{
 		INT(map_base+GPIO_OFFSET) = 0x40000; 	//set low. mode 4: GPIO. It is also the N900 default setting.
-		printf("high - The register value is set to: 0x%x\n", INT(map_base+GPIO_OFFSET));
+		printf("low - The register value is set to: 0x%x\n", INT(map_base+GPIO_OFFSET));
 		}
 	else if(strcmp(argv[1], "high") == 0)
 		{
 		INT(map_base+GPIO_OFFSET) = 0x180000;	//set high. mode 4: GPIO. PU enabled and selected.
-		printf("low - The register value is set to: 0x%x\n", INT(map_base+GPIO_OFFSET));
+		printf("high - The register value is set to: 0x%x\n", INT(map_base+GPIO_OFFSET));
 		}
         usleep(10);
     }
