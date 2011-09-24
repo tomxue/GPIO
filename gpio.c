@@ -5,9 +5,12 @@
 #include <fcntl.h>
 #include <memory.h>
 
+//run on N900
+
 #define GPIO_BASE 0x48002000
-//GPIO_97 register address, the resigter is 32-bit and the higher 16 bit belong to GPIO_97
-#define GPIO_OFFSET 0x110
+//GPIO_104 register address, the resigter is 32-bit and the lower 16 bit belong to GPIO_104
+//GPIO_104 is also TSC_RST on N900, which is touch panel driver's reset, active low
+#define GPIO_OFFSET 0x120
 
 #define INT *(volatile unsigned int*)
 
@@ -26,12 +29,17 @@ int main(int argc,char *argv[])
     map_base = mmap(0,0x200,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
     printf("map_base=%p\n",map_base);
     while(1){
-        INT(map_base+GPIO_OFFSET) = 0x1f0000; //set it high
+	if(strcmp(argv[1], "high") == 0)
+       		{
+		INT(map_base+GPIO_OFFSET) = 0x1000004; 	//0x100,0004 - set high. mode 4: GPIO. It is also the N900 default setting.
+		printf("high - The register value is set to: 0x%x\n", INT(map_base+GPIO_OFFSET));
+		}
+	else if(strcmp(argv[1], "low") == 0)
+		{
+		INT(map_base+GPIO_OFFSET) = 0x1000000;	//0x100,0000 - set low
+		printf("low - The register value is set to: 0x%x\n", INT(map_base+GPIO_OFFSET));
+		}
         usleep(10);
-        INT(map_base+GPIO_OFFSET) = 0x0; //set it low
-        usleep(20);	
-        INT(map_base+GPIO_OFFSET) = 0x0; //set it low
-        usleep(20);
     }
 
     close(fd);
