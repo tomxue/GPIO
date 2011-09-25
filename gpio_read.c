@@ -6,8 +6,8 @@
 #include <memory.h>
 
 #define GPIO_BASE 0x48002000
-//GPIO_97 register address, the resigter is 32-bit and the higher 16 bit belong to GPIO_97
-#define GPIO_OFFSET 0x120	
+//GPIO_150 register address, the resigter is 32-bit and the lower 16 bit belong to GPIO_150
+#define GPIO_OFFSET 0x180	
 
 #define INT *(volatile unsigned int*)
 
@@ -23,11 +23,10 @@ int main(int argc,char *argv[])
 
 printf("fd=%d\n",fd);   
  
-map_base = mmap(0,0x600,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
+map_base = mmap(0,0x200,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
 printf("map_base=%p\n",map_base);
 ret=INT(map_base+GPIO_OFFSET);
 printf("GPIO register value: %x\n",ret);
-//INT(map_base+GPIO_OFFSET) = 0xffff0000; //set it high
 
     close(fd);   
 
