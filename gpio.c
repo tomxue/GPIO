@@ -6,6 +6,8 @@
 #include <memory.h>
 
 //run on BB-XM-00 RevC
+//Beagle Board uses a transistor to drive the LED, which is controlled by GPIO; GPIO -> transistor -> LED
+//that means GPIO's output really drives the LED
 
 #define GPIO_BASE 0x48002000
 //GPIO_149 register address, the resigter is 32-bit and the higher 16 bit belong to GPIO_149
