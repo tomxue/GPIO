@@ -5,14 +5,24 @@
 #include <fcntl.h>
 #include <memory.h>
 
-//run on BB-XM-00 RevC
+//run on BB-XM-00 RevC, to drive the LEDs via GPIO 149&150. 
+//By setting PADCONFS/OE/DATAOUT registers, it is finally done. Great!
 //Beagle Board uses a transistor to drive the LED, which is controlled by GPIO; GPIO -> transistor -> LED
 //that means GPIO's output really drives the LED
 
-#define GPIO_BASE 0x48002000
-//GPIO_149 register address, the resigter is 32-bit and the higher 16 bit belong to GPIO_149
-//GPIO_149 is also LED0_GPIO149
-#define GPIO_OFFSET 0x17C
+#define GPIO_BASE 			0x48002000
+//GPIO_149 register address, the resigter is 32-bit
+//GPIO_149 is also LED1_GPIO149
+#define GPIO_149_OFFSET_HIGHER 		0x17C	//LED D7
+#define GPIO_150_OFFSET_LOWER 		0x180	//LED D6
+
+//P3461,  General-Purpose Interface Integration Figure, GPIO5: GPIO_[159:128]
+#define LED1 0x00200000   		// Bit 21, GPIO149
+#define LED0 0x00400000   		// Bit 22, GPIO150
+
+#define GPIO5_BASE 		0x49056000	//P3478
+#define GPIO5_OE_OFFSET 		0x034		//P3489, Output Data Enable Register
+#define GPIO5_DATAOUT_OFFSET	0x03C		//P3490, Data Out register
 
 #define INT *(volatile unsigned int*)
 
@@ -27,7 +37,6 @@
  */
 
 #define IEN     (1 << 8)
-
 #define IDIS    (0 << 8)
 #define PTU     (1 << 4)
 #define PTD     (0 << 4)
@@ -44,7 +53,7 @@
 #define M7      7 
 
 void *map_base;
-int n,fd,k;
+int n,fd,k,i;
 unsigned int padconf;
 
 int main(int argc,char *argv[])
@@ -56,47 +65,53 @@ int main(int argc,char *argv[])
 
     printf("fd=%d\n",fd);
 
+    //GPIO5: Set the pinmux to select the GPIO signal
     map_base = mmap(0,0x200,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
-    padconf = INT(map_base+GPIO_OFFSET);
-    padconf &= 0xffff0000;
-    printf("map_base=%p\n",map_base);
+    printf("GPIO_BASE map_base=%p\n",map_base);
+    //GPIO149
+    padconf = INT(map_base+GPIO_149_OFFSET_HIGHER);
+    padconf &= 0x0000FFFF; //[31:16]=GPIO_149  - Clear register bits [31:16]
+    padconf |= 0x00040000; //[31:16]=GPIO_149  - Select mux mode 4 for gpio
+    INT(map_base+GPIO_149_OFFSET_HIGHER) = padconf; 
+    printf("GPIO_149_OFFSET_HIGHER - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);    
+    //GPIO150
+    padconf = INT(map_base+GPIO_150_OFFSET_LOWER);
+    padconf &= 0xFFFF0000; //[15:0] =GPIO_150  - Clear register bits [15:0]
+    padconf |= 0x00000004; //[15:0] =GPIO_150  - Select mux mode 4 for gpio
+    INT(map_base+GPIO_150_OFFSET_LOWER) = padconf; 
+    printf("GPIO_150_OFFSET_LOWER - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
+    munmap(map_base,0x200);
 
-while(1)
-{
-        if(argc == 2) //e.g. ./gpio high
-		{
-			if(strcmp(argv[1], "high") == 0)
-					for(k=0;k<=8192;k++)	//sweep all register settings of GPIO mode
-					{
-						padconf = ((k<<19) + (4<<16));  //to ensure it is GPIO mode
-						INT(map_base+GPIO_OFFSET) = padconf; 
-						sleep(0.5);
-						printf("high - The register value is set to: 0x%x = 0d%d\n", padconf,padconf);
-					}
-			else if(strcmp(argv[1], "low") == 0)
-					{
-						padconf = (DIS | PTD | M4)<<16;	//disable first
-						usleep(10000);
-						INT(map_base+GPIO_OFFSET) = padconf;
-						usleep(10000);
-						padconf = (EN | PTD | M4)<<16;	//then enable, but still failed
-						usleep(10000);
-						INT(map_base+GPIO_OFFSET) = padconf;
-						printf("low - The register value is set to: 0x%x\n", padconf);
-					}
-		}
-	else		//e.g. ./gpio high 4294180864
-		{
-			padconf = atoi(argv[2]);
-			INT(map_base+GPIO_OFFSET) = padconf; 
-			sleep(1);
-			printf("high - The register value is set to: 0x%x\n", padconf);
-		}
-        usleep(10);
-    }
+
+    //GPIO5: Set the OE and DATAOUT registers
+    map_base = mmap(0,0x40,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO5_BASE);
+    printf("GPIO5_BASE map_base=%p\n",map_base);    
+    //OE
+    padconf = INT(map_base+GPIO5_OE_OFFSET);
+    padconf &= ~(LED1+LED0);  // Set GPIO_149 & GPIO_150 (GPIO 4 bit 2) to output
+    INT(map_base+GPIO_149_OFFSET_HIGHER) = padconf; 
+    printf("GPIO5_OE_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
+    //DATAOUT
+    padconf = INT(map_base+GPIO5_DATAOUT_OFFSET);
+    padconf |=  LED0;  //Set GPIO_150 high
+    padconf &= ~LED1;  //Set GPIO_149 low
+    INT(map_base+GPIO5_DATAOUT_OFFSET) = padconf; 
+    printf("GPIO5_DATAOUT_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
+
+    //Hello world!
+    for(k=0;k<=200;k++)
+	{
+    	usleep(200000);
+	padconf ^=  LED0;  // Toggle GPIO_150
+	INT(map_base+GPIO5_DATAOUT_OFFSET) = padconf;
+	padconf ^=  LED1;  // Toggle GPIO_149    	
+	INT(map_base+GPIO5_DATAOUT_OFFSET) = padconf;
+	} 	
 
     close(fd);
-
-    munmap(map_base,0xff);
+    munmap(map_base,0x40);
 }
+
+
+
 
