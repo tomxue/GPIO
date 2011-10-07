@@ -89,7 +89,7 @@ int main(int argc,char *argv[])
     //OE
     padconf = INT(map_base+GPIO5_OE_OFFSET);
     padconf &= ~(LED1+LED0);  // Set GPIO_149 & GPIO_150 (GPIO 4 bit 2) to output
-    INT(map_base+GPIO_149_OFFSET_HIGHER) = padconf; 
+    INT(map_base+GPIO5_OE_OFFSET) = padconf; 
     printf("GPIO5_OE_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
     //DATAOUT
     padconf = INT(map_base+GPIO5_DATAOUT_OFFSET);
