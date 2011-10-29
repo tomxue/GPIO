@@ -49,6 +49,8 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 #define INT *(volatile unsigned int*)
 
+//void below means the pointer points to byte data, if e.g. unsigned int *map_base
+//then should be: INT(map_base+GPIO_104_OFFSET_LOWER/4) = padconf;
 void *map_base;
 int n,fd,k,i,j;
 unsigned int padconf;

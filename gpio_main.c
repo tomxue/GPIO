@@ -51,6 +51,8 @@
 #define M6      6
 #define M7      7 
 
+//void below means the pointer points to byte data, if e.g. unsigned int *map_base
+//then should be: INT(map_base+GPIO_138_OFFSET_LOWER/4) = padconf;
 void *map_base;
 int n,fd,k,i,num_duty,j;
 unsigned int padconf;
