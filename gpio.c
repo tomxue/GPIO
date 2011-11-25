@@ -91,10 +91,16 @@ int main(int argc,char *argv[])
     //Hello world!
     while(1)
 	{
-	padconf ^=  GPIO24;  // Toggle GPIO_24
-	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf;
-	padconf ^=  GPIO24;  // Toggle GPIO_24	
-	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf;
+	//padconf ^=  GPIO24;  // Toggle GPIO_24
+	//INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf;
+
+    	padconf |=  GPIO24;  //Set GPIO_24 high
+    	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf; 
+	padconf |=  GPIO24;  //Set GPIO_24 high
+    	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf; 
+
+	padconf &= ~GPIO24;  //Set GPIO_24 low
+	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf; 
 	} 	
 
     close(fd);
