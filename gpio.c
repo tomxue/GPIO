@@ -48,7 +48,7 @@
 //void below means the pointer points to byte data, if e.g. unsigned int *map_base
 //then should be: INT(map_base+GPIO_138_OFFSET_LOWER/4) = padconf;
 void *map_base;  
-int n,fd,k,i,num_duty,j;
+int fd,i,j,k;
 unsigned int padconf;
 
 
@@ -93,14 +93,18 @@ int main(int argc,char *argv[])
 	{
 	//padconf ^=  GPIO24;  // Toggle GPIO_24
 	//INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf;
+	for(k=0;k<20;k++){
+		for(i=0;i<20;i++){
+    		padconf |=  GPIO24;  //Set GPIO_24 high
+    		INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf;
+		}
 
-    	padconf |=  GPIO24;  //Set GPIO_24 high
-    	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf; 
-	padconf |=  GPIO24;  //Set GPIO_24 high
-    	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf; 
-
-	padconf &= ~GPIO24;  //Set GPIO_24 low
-	INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf; 
+		for(j=0;j<20;j++){
+		padconf &= ~GPIO24;  //Set GPIO_24 low
+		INT(map_base+GPIO1_DATAOUT_OFFSET) = padconf; 
+		}
+	}
+	usleep(1000);
 	} 	
 
     close(fd);
