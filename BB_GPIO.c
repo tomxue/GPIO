@@ -5,10 +5,19 @@
 #include <fcntl.h>
 #include <memory.h>
 
-//run on BB-XM-00 RevC, to drive GPIO 144(IR_positioning OE pin).
-//By setting PADCONFS/OE/DATAOUT registers, it is finally done. Great!
-//Beagle Board uses a transistor to drive the LED, which is controlled by GPIO; GPIO -> transistor -> LED
-//that means GPIO's output really drives the LED
+#define bool int
+#define false 0
+#define true 1
+
+// run on BB-XM-00 RevC
+// GPIO 144: IR_positioning OE pin
+// GPIO_146/GPT11_PWMEVT: IR_positioning SI_1V8 pin
+// GPIO_145/GPT10_PWMEVT: IR_positioning CLK_1V8 pin
+// McSPI4 applied
+
+// By setting PADCONFS/OE/DATAOUT registers, it is finally done. Great!
+// Beagle Board uses a transistor to drive the LED, which is controlled by GPIO; GPIO -> transistor -> LED
+// that means GPIO's output really drives the LED
 
 #define GPIO_BASE 			0x48002000
 //GPIO_144 register address, the resigter is 32-bit
@@ -55,7 +64,7 @@ void *map_base;
 int n,fd,k,i,j;
 unsigned int padconf;
 
-int main(int argc,char *argv[])
+int OESetHigh(bool setHigh)
 {
     if((fd=open("/dev/mem",O_RDWR | O_SYNC))==-1)
     {
@@ -86,10 +95,19 @@ int main(int argc,char *argv[])
     printf("GPIO5_OE_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
     //DATAOUT
     padconf = INT(map_base+GPIO5_DATAOUT_OFFSET);
-    padconf |=  GPIO144;  //Set GPIO_144 high
+    if(setHigh)
+        padconf |=  GPIO144;  //Set GPIO_144 high
+    else
+        padconf &= ~GPIO144;    // set GPIO_144 low
     INT(map_base+GPIO5_DATAOUT_OFFSET) = padconf;
     printf("GPIO5_DATAOUT_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
 
     close(fd);
     munmap(map_base,0x40);
+}
+
+int main(int argc,char *argv[])
+{
+    //OESetHigh(false);
+    OESetHigh(true);
 }
