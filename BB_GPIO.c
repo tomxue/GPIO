@@ -71,48 +71,6 @@ void *map_base;
 int n,fd,k,j;
 unsigned int padconf;
 
-int OESetHigh(bool setHigh)
-{
-    if((fd=open("/dev/mem",O_RDWR | O_SYNC))==-1)
-    {
-        perror("open error!\n");
-        return(-1);
-    }
-
-    printf("fd=%d\n",fd);
-
-    //GPIO5: Set the pinmux to select the GPIO signal
-    map_base = mmap(0,0x200,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO_BASE);
-    printf("GPIO_BASE map_base=%p\n",map_base);
-    //GPIO144oe
-    padconf = INT(map_base+GPIO_144oe_OFFSET);
-    padconf &= 0xFFFF0000; //[15:0]=GPIO_144oe  - Clear register bits [15:0]
-    padconf |= 0x00000004; //[15:0]=GPIO_144oe  - Select mux mode 4 for gpio
-    INT(map_base+GPIO_144oe_OFFSET) = padconf;
-    printf("GPIO_144oe_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
-    munmap(map_base,0x200);
-
-    //GPIO5: Set the OE and DATAOUT registers
-    map_base = mmap(0,0x40,PROT_READ | PROT_WRITE,MAP_SHARED,fd,GPIO5_BASE);
-    printf("GPIO5_BASE map_base=%p\n",map_base);
-    //OE
-    padconf = INT(map_base+GPIO5_OE_OFFSET);
-    padconf &= ~(GPIO144oe);  // Set GPIO_144oe to output
-    INT(map_base+GPIO5_OE_OFFSET) = padconf;
-    printf("GPIO5_OE_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
-    //DATAOUT
-    padconf = INT(map_base+GPIO5_DATAOUT_OFFSET);
-    if(setHigh)
-        padconf |=  GPIO144oe;  //Set GPIO_144oe high
-    else
-        padconf &= ~GPIO144oe;    // set GPIO_144oe low
-    INT(map_base+GPIO5_DATAOUT_OFFSET) = padconf;
-    printf("GPIO5_DATAOUT_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
-
-    close(fd);
-    munmap(map_base,0x40);
-}
-
 int DAQStart(bool started)
 {
     int SIcount = 0;
@@ -134,6 +92,12 @@ int DAQStart(bool started)
     padconf |= 0x00040000; //[31:16]=GPIO_139sw  - Select mux mode 4 for gpio
     INT(map_base+GPIO_139sw_OFFSET) = padconf;
     printf("GPIO_139sw_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
+    //GPIO144oe
+    padconf = INT(map_base+GPIO_144oe_OFFSET);
+    padconf &= 0xFFFF0000; //[15:0]=GPIO_144oe  - Clear register bits [15:0]
+    padconf |= 0x00000004; //[15:0]=GPIO_144oe  - Select mux mode 4 for gpio
+    INT(map_base+GPIO_144oe_OFFSET) = padconf;
+    printf("GPIO_144oe_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
     //GPIO145clk
     padconf = INT(map_base+GPIO_145clk_OFFSET);
     padconf &= 0x0000FFFF; //[31:16]=GPIO_145clk  - Clear register bits [15:0]
@@ -154,11 +118,17 @@ int DAQStart(bool started)
     printf("GPIO5_BASE map_base=%p\n",map_base);
     //OE
     padconf = INT(map_base+GPIO5_OE_OFFSET);
-    padconf &= ~(GPIO139sw+GPIO145clk+GPIO146si);  // Set GPIO_139sw, GPIO_145clk and GPIO_146si to output
+    padconf &= ~(GPIO139sw+GPIO144oe+GPIO145clk+GPIO146si);  // Set GPIO_139sw, GPIO144oe, GPIO_145clk and GPIO_146si to output
     INT(map_base+GPIO5_OE_OFFSET) = padconf;
     printf("GPIO5_OE_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
     //DATAOUT
     padconf = INT(map_base+GPIO5_DATAOUT_OFFSET);
+
+    //Set GPIO_144oe high
+    padconf |=  GPIO144oe;
+    INT(map_base+GPIO5_DATAOUT_OFFSET) = padconf;
+    printf("GPIO5_DATAOUT_OFFSET - The register value is set to: 0x%x = 0d%u\n", padconf,padconf);
+
     while(1)
     {
         padconf &= ~(GPIO145clk+GPIO146si);    // set GPIO139sw, GPIO_145clk and GPIO_146si low
@@ -196,7 +166,5 @@ int DAQStart(bool started)
 
 int main(int argc,char *argv[])
 {
-    //OESetHigh(false);
-    OESetHigh(true);
     DAQStart(true);
 }
